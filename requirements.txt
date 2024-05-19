@@ -1,0 +1,9 @@
+Django
+twilio
+tensorflow
+streamlit
+langchain
+openai
+langchain-community
+faiss-cpu
+tiktoken
