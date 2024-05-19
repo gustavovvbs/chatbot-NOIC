@@ -7,3 +7,4 @@ openai
 langchain-community
 faiss-cpu
 tiktoken
+html2text
