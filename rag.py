@@ -9,6 +9,7 @@ from langchain.embeddings import OpenAIEmbeddings
 from langchain.document_loaders import PyPDFLoader 
 from langchain.document_transformers import Html2TextTransformer
 from langchain.document_loaders import AsyncHtmlLoader
+import pickle
 
 
 
@@ -16,43 +17,21 @@ load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 embeddings = OpenAIEmbeddings(openai_api_key = OPENAI_API_KEY)
 
-def ainvoke(prompt):
-    urls = ["https://noic.com.br/olimpiadas/", "https://noic.com.br/olimpiadas/astronomia/", "https://noic.com.br/astronomia/guia/", "https://noic.com.br/astronomia/guia/oba/", "https://noic.com.br/astronomia/guia/vinhedo/", "https://noic.com.br/astronomia/guia/antigos-e-olaa/"]
-    loader = AsyncHtmlLoader(urls)
-    docs = loader.load()
-    html2text = Html2TextTransformer()
-    docs_transformed = html2text.transform_documents(docs)
+# def ainvokef(prompt):
+#     with open('retriever.pkl', 'rb') as input:
+#         retriever = pickle.load(input)
 
-    loaderonline = PyPDFLoader('./Guia_NOIC_Seletivas_Online.pdf')
-    loaderbarra = PyPDFLoader('./guiabarra.pdf')
+#     return retriever.invoke(prompt)
 
-    online = loaderonline.load()
-    barra = loaderbarra.load()
-
-    barraonline = barra + online
-
-    todes = barraonline + docs_transformed
+def stdinvoke(prompt):
     vec_db = Chroma(
-        collection_name = 'split_parents', embedding_function = embeddings
+        collection_name = 'split_parents', embedding_function = embeddings, persist_directory='./chroma_db'
     )
+    docs = vec_db.similarity_search(prompt, k=5)
+    print(docs)
 
-    parent_splitter = RecursiveCharacterTextSplitter(chunk_size=2000)
-
-    child_splitter = RecursiveCharacterTextSplitter(chunk_size=400)
-
-    store = InMemoryStore()
-
-    retriever = ParentDocumentRetriever(
-        vectorstore = vec_db,
-        docstore = store,
-        child_splitter = child_splitter,
-        parent_splitter = parent_splitter,
-    )
-    retriever.add_documents(todes)
-
-    return retriever.invoke(prompt)
-
-print(ainvoke('seletiva'))
+retrieves = ainvokef('matematica basicaw')
+print(retrieves)
 
 def junta_docs(docs):
     return '\n\n'.join([doc.page_content for doc in docs])
@@ -63,4 +42,5 @@ def get_prompt(query):
     Query: {query}
 
     Contexto:{junta_docs(ainvoke(query))}"""
+
 

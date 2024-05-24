@@ -1,5 +1,3 @@
-Django
-twilio
 tensorflow
 streamlit
 langchain
@@ -8,3 +6,4 @@ langchain-community
 faiss-cpu
 tiktoken
 html2text
+bs4
