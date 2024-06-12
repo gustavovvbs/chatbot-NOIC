@@ -31,12 +31,4 @@ embeddings = OpenAIEmbeddings(openai_api_key = OPENAI_API_KEY)
 
 def junta_docs(docs):
     return '\n\n'.join([doc.page_content for doc in docs])
-@traceable
-def get_prompt(query, contexto):
-    return f"""Responda a query utilizando o contexto disponibilizado:
-
-    Query: {query}
-
-    Contexto:{junta_docs(contexto)}"""
-
 
