@@ -4,10 +4,27 @@ import streamlit as st
 import numpy as np
 import openai
 from rag import get_prompt
+import langsmith
+from langsmith.wrappers import wrap_openai
+from pdr import pdr_build
+
+
 load_dotenv()
+
+os.environ["LANGCHAIN_API_KEY"] = os.getenv("LANGCHAIN_API_KEY")
+os.environ["LANGCHAIN_TRACING_V2"] = "true"
+os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
+os.environ["LANGCHAIN_PROJECT"] = "TESTE"
+
+client = langsmith.Client(api_url="https://api.smith.langchain.com", api_key=os.getenv("LANGCHAIN_API_KEY"))
 
 st.title('Assistente olimpico')
 openai.api_key = os.getenv("OPENAI_API_KEY")
+
+openaiclient = wrap_openai(openai.Client())
+
+if "parentretriever" not in st.session_state:
+    st.session_state.parentretriever = pdr_build()
 
 if "openai_model" not in st.session_state:
     st.session_state.openai_model = "gpt-3.5-turbo"
@@ -15,9 +32,10 @@ if "openai_model" not in st.session_state:
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# st.session_state.messages.append({'role': 'system', 'content': 'Você é o Ualype, chatbot do site NOIC. Você é um funcionário do NOIC, e deve responder as perguntas dos usuários. Seja educado e prestativo. Você deve usar o contexto disponível para responder as perguntas dos usuários. Se não souber, não minta, e nem faça menções sobre consulta em documentos. Caso não saiba, mande o usuário entrar no grupo de whatsapp ou discord do NOIC.'})
 
-st.session_state.messages.append({'role': 'assistant', 'content': 'Olá!, sou o Ualype, a inteligência artificial do noic que vai te ajudar a ser medalhista em olimpíadas! Como posso te ajudar hoje?'})
+    st.session_state.messages.append({'role': 'system', 'content': 'Você é o Ualype, chatbot do site NOIC. Você é um funcionário do NOIC, e deve responder as perguntas dos usuários. Seja educado e prestativo. Você deve usar o contexto disponível para responder as perguntas dos usuários. Se não souber, não minta, e nem faça menções sobre consulta em documentos. Caso não saiba, mande o usuário entrar no grupo de whatsapp ou discord do NOIC.'})
+
+    st.session_state.messages.append({'role': 'assistant', 'content': 'Olá!, sou o Ualype, a inteligência artificial do noic que vai te ajudar a ser medalhista em olimpíadas! Como posso te ajudar hoje?'})
 
 
 for message in st.session_state.messages:
@@ -32,13 +50,13 @@ if prompt:
         st.markdown(prompt)
         st.session_state.messages.append({'role': 'user', 'content': prompt})
 
-    augmentedprompt = get_prompt(prompt)
+    augmentedprompt = get_prompt(prompt, st.session_state.parentretriever.invoke(prompt))
 
     messages_copy = st.session_state.messages.copy()
     messages_copy.append({'role': 'user', 'content': augmentedprompt})
 
     with st.chat_message('assistant'):
-        stream = openai.chat.completions.create(
+        stream = openaiclient.chat.completions.create(
             model = st.session_state['openai_model'],
             messages = [
                 {'role': m['role'], 'content': m['content']} for m in messages_copy
