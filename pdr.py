@@ -12,6 +12,9 @@ from langchain.document_transformers import Html2TextTransformer
 from langchain.document_loaders import AsyncHtmlLoader
 from langchain.storage import LocalFileStore
 import pickle
+from langsmith import Client, traceable
+
+langclient = Client(api_key=os.getenv("LANGCHAIN_API_KEY"), api_url="https://api.smith.langchain.com")
 
 
 
@@ -20,6 +23,7 @@ load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 embeddings = OpenAIEmbeddings(openai_api_key = OPENAI_API_KEY)
 
+@traceable
 def pdr_build():
     urls = ["https://noic.com.br/olimpiadas/", "https://noic.com.br/olimpiadas/astronomia/", "https://noic.com.br/astronomia/guia/", "https://noic.com.br/astronomia/guia/oba/", "https://noic.com.br/astronomia/guia/vinhedo/", "https://noic.com.br/astronomia/guia/antigos-e-olaa/"]
     loader = AsyncHtmlLoader(urls)
@@ -60,6 +64,3 @@ def save_object(obj, filename):
         pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
 
 
-if __name__ == "__main__":
-    teste = pdr_build().invoke('matematica')
-    print(teste)
