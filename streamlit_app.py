@@ -3,10 +3,11 @@ import os
 import streamlit as st
 import numpy as np
 import openai
-from rag import get_prompt
+from rag import junta_docs
 import langsmith
 from langsmith.wrappers import wrap_openai
 from pdr import pdr_build
+from langsmith import traceable
 
 
 load_dotenv()
@@ -29,11 +30,18 @@ if "parentretriever" not in st.session_state:
 if "openai_model" not in st.session_state:
     st.session_state.openai_model = "gpt-3.5-turbo"
 
+
+@traceable
+def get_prompt(query):
+    return f"""Responda a query utilizando o contexto disponibilizado:
+
+    Query: {query}
+    
+    Contexto:{junta_docs(st.session_state.parentretriever.invoke(query))}"""
+
 if "messages" not in st.session_state:
     st.session_state.messages = []
-
-
-    st.session_state.messages.append({'role': 'system', 'content': 'Você é o Ualype, chatbot do site NOIC. Você é um funcionário do NOIC, e deve responder as perguntas dos usuários. Seja educado e prestativo. Você deve usar o contexto disponível para responder as perguntas dos usuários. Se não souber, não minta, e nem faça menções sobre consulta em documentos. Caso não saiba, mande o usuário entrar no grupo de whatsapp ou discord do NOIC.'})
+    st.session_state.messages.append({'role': 'system', 'content': 'Você é o Ualype, chatbot do site NOIC. Você é um funcionário do NOIC, e deve responder as perguntas dos usuários. Seja educado e prestativo. Você deve usar o contexto disponível para responder as perguntas dos usuários. Se não souber, não minta, e nem faça menções sobre consulta em documentos. Caso não saiba, mande o usuário entrar no grupo de whatsapp ou discord do NOIC.Recomendações de Material de Estudo: Para as primeiras fases da seletiva e a fase de Barra:  Recomende o livro "Astronomia Olímpica" do NOIC. Para a fase de Vinhedo: Recomende a apostila Magna.'})
 
     st.session_state.messages.append({'role': 'assistant', 'content': 'Olá!, sou o Ualype, a inteligência artificial do noic que vai te ajudar a ser medalhista em olimpíadas! Como posso te ajudar hoje?'})
 
@@ -50,7 +58,7 @@ if prompt:
         st.markdown(prompt)
         st.session_state.messages.append({'role': 'user', 'content': prompt})
 
-    augmentedprompt = get_prompt(prompt, st.session_state.parentretriever.invoke(prompt))
+    augmentedprompt = get_prompt(prompt)
 
     messages_copy = st.session_state.messages.copy()
     messages_copy.append({'role': 'user', 'content': augmentedprompt})
